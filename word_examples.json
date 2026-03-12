@@ -1,0 +1,148 @@
+﻿[
+  {
+    "id": 1,
+    "word": "pulse",
+    "phonetics": [
+      {
+        "region": "us",
+        "text": "pʌls",
+        "audio": ""
+      },
+      {
+        "region": "uk",
+        "text": "pʌls",
+        "audio": ""
+      }
+    ],
+    "meanings": [
+      {
+        "pos": "n.",
+        "definition": "the rhythmic contraction of arteries as blood is pumped through them",
+        "synonyms": [
+          "beat",
+          "throb"
+        ],
+        "examples": [
+          {
+            "en": "His pulse was racing after the sprint.",
+            "zh": "衝刺後他的脈搏加快。"
+          }
+        ]
+      },
+      {
+        "pos": "v.",
+        "definition": "to throb or beat rhythmically",
+        "synonyms": [
+          "throb",
+          "pulsate"
+        ],
+        "examples": [
+          {
+            "en": "The lights pulsed in time with the music.",
+            "zh": "燈光隨著音樂有節奏地閃動。"
+          }
+        ]
+      }
+    ],
+    "phrases": [
+      {
+        "text": "pulse width modulation",
+        "zh": "脈寬調變",
+        "examples": [
+          {
+            "en": "PWM is used to control motor speed.",
+            "zh": "PWM 用於控制馬達轉速。"
+          }
+        ]
+      }
+    ],
+    "derivatives": [
+      {
+        "word": "pulsate"
+      },
+      {
+        "word": "pulsation"
+      }
+    ],
+    "etymology": [
+      {
+        "source": "Latin",
+        "description": "from Latin *pulsus*, past participle of *pellere* (to drive, push)"
+      }
+    ],
+    "categories": [
+      "science",
+      "medicine"
+    ],
+    "level": "A2",
+    "frequency": 2341
+  },
+  {
+    "id": 2,
+    "word": "blood",
+    "phonetics": [
+      {
+        "region": "us",
+        "text": "blʌd",
+        "audio": ""
+      },
+      {
+        "region": "uk",
+        "text": "blʌd",
+        "audio": ""
+      }
+    ],
+    "meanings": [
+      {
+        "pos": "n.",
+        "definition": "the red liquid that circulates in the arteries and veins",
+        "synonyms": [
+          "lifeblood"
+        ],
+        "examples": [
+          {
+            "en": "Blood carries oxygen throughout the body.",
+            "zh": "血液將氧氣輸送到全身。"
+          }
+        ]
+      }
+    ],
+    "phrases": [
+      {
+        "text": "blood pressure",
+        "zh": "血壓",
+        "examples": [
+          {
+            "en": "Her blood pressure is normal.",
+            "zh": "她的血壓正常。"
+          }
+        ]
+      },
+      {
+        "text": "blood donor",
+        "zh": "捐血者",
+        "examples": []
+      }
+    ],
+    "derivatives": [
+      {
+        "word": "bloodless"
+      },
+      {
+        "word": "bloodstream"
+      }
+    ],
+    "etymology": [
+      {
+        "source": "Old English",
+        "description": "from Old English *blōd*"
+      }
+    ],
+    "categories": [
+      "biology",
+      "medicine"
+    ],
+    "level": "A1",
+    "frequency": 512
+  }
+]
