@@ -8,11 +8,34 @@ from xml.etree.ElementTree import iterparse  # 匯入 XML 流式解析器
 import requests  # 匯入 requests 以發送網路請求
 
 # 優化正規表示式：支援標題空格（如 === Etymology ===）並增加對換行符的彈性
-ETYM_RE = re.compile(r"==+\s*Etymology\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Etymology 區段
+ETYM_RE = re.compile(r"==+\s*Etymology(?:\s+\d+)?\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Etymology 區段
 DERIVED_RE = re.compile(r"==+\s*Derived terms\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Derived terms 區段
 PHRASES_RE = re.compile(r"==+\s*Phrases\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Phrases 區段
 LINK_RE = re.compile(r"\[\[(.*?)(?:\||\]\])")  # 擷取內部連結文字
-# 依正規式擷取區段內的連結項目
+# 清理 Wikitext：移除模板、連結、標籤並去除非文字符號
+def _clean_wikitext(text: str) -> str:
+    # 1. 移除註解
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+    # 2. 移除 <ref> 標籤
+    text = re.sub(r"<ref.*?>.*?</ref>", "", text, flags=re.S)
+    text = re.sub(r"<ref.*?>", "", text)
+    # 3. 處理 [[link|text]] 或 [[text]]
+    text = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]+)\]\]", r"\1", text)
+    # 4. 移除常見模板 {{...}}，但嘗試保留一些意義（如 {{m|...|word}}）
+    # 簡單起見：先移除所有 {{...}} 區塊，若要更精準則需更複雜的遞迴解析
+    # 這裡採用非貪婪匹配但要小心嵌套，目前採取逐層剝離或簡單移除
+    while "{{" in text and "}}" in text:
+        # 嘗試處理常見模板 {{inh|...|word|t=translation}}
+        # 這裡簡易處理：只留下最後一段可能或是直接移除
+        text = re.sub(r"\{\{[^{}]*\}\}", "", text)
+    
+    # 5. 移除其餘標籤如 <small>, <big>
+    text = re.sub(r"<[^>]+>", "", text)
+    # 6. 去除多餘空白與換行
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+# 依正規式擷取區段內的連結項目 (支援更深層的標題，如 ====)
 def _extract_section(text: str, pattern: re.Pattern) -> list[str]:
     m = pattern.search(text)  # 搜尋符合的區段
     if not m:  # 若找不到區段
@@ -25,12 +48,20 @@ def _extract_section(text: str, pattern: re.Pattern) -> list[str]:
     return items  # 回傳擷取結果
 # 解析 Wiktionary 文字並回傳欄位
 def extract_wiktionary_fields(text: str) -> dict:
-    ety = ETYM_RE.search(text)  # 搜尋字源區段
-    etymology = []  # 建立字源清單
-    if ety:  # 找到字源區段
-        desc = ety.group(1).strip().split("\n")[0][:300]  # 取第一行並限制長度
-        if desc:  # 有描述內容才加入
-            etymology.append({"source": "Wiktionary", "description": desc})  # 新增字源描述
+    # 處理多個 Etymology 區段
+    etymology = []
+    for ety_match in ETYM_RE.finditer(text):
+        block = ety_match.group(1).strip()
+        # 跳過只有模板的行，找到包含文字的行
+        lines = [line.strip() for line in block.split("\n") if line.strip()]
+        for line in lines:
+            if not line.startswith("{{") or len(line) > 50: # 可能是帶有內容的行
+                cleaned = _clean_wikitext(line)
+                if len(cleaned) > 10:
+                    etymology.append({"source": "Wiktionary", "description": cleaned[:400]})
+                    break # 每個區段取第一條有效的描述
+        if len(etymology) >= 2: # 最多取兩個區段
+            break
 
     derived = _extract_section(text, DERIVED_RE)  # 擷取衍生字區段
     phrases = _extract_section(text, PHRASES_RE)  # 擷取片語區段
@@ -110,7 +141,11 @@ def fetch_wiktionary_from_api(word: str) -> dict | None:
     }
     
     try:
-        response = requests.get(url, params=params, timeout=10)
+        headers = {
+            "User-Agent": "AntigravityDictionaryBuilder/1.0 (https://github.com/jo87jimmy/AutomaticallyGenerateWordDoc)"
+        }
+        print(f" [Wiktionary] Fetching '{word}' from API...")
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         if response.status_code != 200:
             return None
             
