@@ -12,7 +12,9 @@ from .dictionary_api_provider import (
     translateText,
     clean_api_data,
     map_pos,
-    fetch_phrases_from_api
+    fetch_phrases_from_api,
+    fetch_google_dictionary_meanings,
+    fetch_google_extras,
 )
 from .cefr_provider import load_cefr, get_level_from_rank
 from .frequency_provider import load_frequency, fetch_frequency_from_api
