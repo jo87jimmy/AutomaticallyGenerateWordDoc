@@ -22,6 +22,10 @@ def main():  # 主流程
     freq_map = load_frequency(DATASETS_DIR / "word_frequency.csv")  # 載入字頻資料
     cefr_map = load_cefr(DATASETS_DIR / "cefr.csv")  # 載入 CEFR 資料
 
+    if not freq_map or not cefr_map:
+        print("提示：本地 datasets 資料夾（word_frequency.csv, cefr.csv）缺失或讀取失敗。")
+        print("系統將自動切換至網路 API 備援模式（查詢速度會較慢）。")
+
     dataset = []  # 建立輸出資料集
 
     # Precompute wiktionary cache only if dump exists.  # 只有在 dump 存在時才預先建快取

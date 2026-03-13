@@ -20,6 +20,15 @@ except Exception:  # nltk not installed  # NLTK 未安裝時
 #     "r": "adv.",  # 副詞
 # }  # 結束對照表
 
+# WordNet 詞性標記到標準名稱的映射，原因：WordNet 使用 'n', 'v', 'a' 等縮寫
+WN_POS_MAP = {
+    "n": "noun",
+    "v": "verb",
+    "a": "adjective",
+    "s": "adjective",  # 衛星形容詞
+    "r": "adverb"
+}
+
 # 取得 WordNet 詞義
 def get_wordnet_meanings(word: str, max_synsets: int = 2, max_synonyms: int = 3) -> list[dict]:
     if not wn:  # WordNet 不可用
@@ -37,9 +46,35 @@ def get_wordnet_meanings(word: str, max_synsets: int = 2, max_synonyms: int = 3)
         for s in synonyms:  # 逐一處理同義詞
             if s not in uniq:  # 若尚未加入
                 uniq.append(s)  # 加入清單
+        
+        # 轉換 WordNet POS 為標準格式後再進行縮寫映射
+        wn_pos = syn.pos()
+        std_pos = WN_POS_MAP.get(wn_pos, wn_pos)
+        pos_abbr = dictionary_api_provider.map_pos(std_pos)
+
         meanings.append({  # 新增一筆詞義
-            "pos": dictionary_api_provider._POS_MAP.get(syn.pos(), ""),  # 詞性縮寫
+            "pos": pos_abbr,  # 詞性縮寫
             "definition": syn.definition(),  # 詞義定義
             "synonyms": uniq[:max_synonyms],  # 限制同義詞數量
         })  # 結束新增
     return meanings  # 回傳詞義清單
+
+# 利用 WordNet 找出單字的衍生詞
+def get_wordnet_derivatives(word: str) -> list[dict]:
+    """
+    找出與給定單字有形態學關聯的字詞 (例如: act -> action, actor)。
+    """
+    if not wn:
+        return []
+        
+    derivatives = set()
+    for syn in wn.synsets(word):
+        for lemma in syn.lemmas():
+            # 取得形態學關聯的形式
+            for related in lemma.derivationally_related_forms():
+                deriv_word = related.name().replace("_", " ")
+                if deriv_word.lower() != word.lower():
+                    derivatives.add(deriv_word)
+    
+    # 轉換成規定的格式並限制數量
+    return [{"word": w} for w in sorted(list(derivatives))[:10]]

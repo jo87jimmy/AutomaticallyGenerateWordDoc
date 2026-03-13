@@ -1,12 +1,16 @@
-﻿import bz2  # 匯入 bz2 以讀取壓縮檔
+import bz2  # 匯入 bz2 以讀取壓縮檔
 import json  # 匯入 JSON 模組
 import re  # 匯入正規表示式模組
+import time  # 匯入時間模組
 from pathlib import Path  # 匯入 Path 以處理路徑
 from xml.etree.ElementTree import iterparse  # 匯入 XML 流式解析器
 
-ETYM_RE = re.compile(r"==+Etymology==+\n(.*?)(?:\n==|\Z)", re.S | re.I)  # 擷取 Etymology 區段
-DERIVED_RE = re.compile(r"==+Derived terms==+\n(.*?)(?:\n==|\Z)", re.S | re.I)  # 擷取 Derived terms 區段
-PHRASES_RE = re.compile(r"==+Phrases==+\n(.*?)(?:\n==|\Z)", re.S | re.I)  # 擷取 Phrases 區段
+import requests  # 匯入 requests 以發送網路請求
+
+# 優化正規表示式：支援標題空格（如 === Etymology ===）並增加對換行符的彈性
+ETYM_RE = re.compile(r"==+\s*Etymology\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Etymology 區段
+DERIVED_RE = re.compile(r"==+\s*Derived terms\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Derived terms 區段
+PHRASES_RE = re.compile(r"==+\s*Phrases\s*==+.*?\n(.*?)(?:\n\s*==+|\Z)", re.S | re.I)  # 擷取 Phrases 區段
 LINK_RE = re.compile(r"\[\[(.*?)(?:\||\]\])")  # 擷取內部連結文字
 # 依正規式擷取區段內的連結項目
 def _extract_section(text: str, pattern: re.Pattern) -> list[str]:
@@ -68,15 +72,72 @@ def build_wiktionary_cache(dump_path: Path, words: set[str], cache_dir: Path) ->
                         json.dumps(out, ensure_ascii=False), encoding="utf8"  # 序列化成 JSON
                     )  # 結束寫入
                 elem.clear()  # 清除元素以釋放記憶體
-# 從快取讀取 Wiktionary 資料
+# 從快取讀取 Wiktionary 資料，若無則嘗試從網路 API 抓取 (備援機制)
 def load_wiktionary_entry(word: str, cache_dir: Path) -> dict | None:
     p = cache_dir / f"{word.lower()}.json"  # 取得快取檔案路徑
-    if not p.exists():  # 檔案不存在就回傳 None
-        return None  # 表示沒有資料
-    try:  # 嘗試讀取並解析 JSON
-        return json.loads(p.read_text(encoding="utf8"))  # 回傳解析結果
-    except Exception:  # 讀取失敗
-        return None  # 回傳 None
+    
+    # 1. 優先從本地快取讀取
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf8"))
+        except Exception:
+            pass
+
+    # 2. 本地無快取，嘗試從網路 API 抓取 (更好、更靈活的方法)
+    data = fetch_wiktionary_from_api(word)
+    if data:
+        # 寫入快取供下次使用
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf8")
+        return data
+        
+    return None
+
+# 透過網路 API 抓取 Wiktionary 的原始內容並解析
+def fetch_wiktionary_from_api(word: str) -> dict | None:
+    """
+    從 Wiktionary MediaWiki API 抓取單字原始碼 (Wikitext) 並解析。
+    這是當本地沒有 XML dump 時的最佳替代方案。
+    """
+    url = "https://en.wiktionary.org/w/api.php"
+    params = {
+        "action": "query",
+        "prop": "revisions",
+        "rvprop": "content",
+        "format": "json",
+        "titles": word,
+        "redirects": 1
+    }
+    
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code != 200:
+            return None
+            
+        res_data = response.json()
+        pages = res_data.get("query", {}).get("pages", {})
+        
+        # 取得第一筆頁面內容
+        for page_id, page_data in pages.items():
+            if page_id == "-1": # 沒找到頁面
+                return None
+            
+            revisions = page_data.get("revisions", [])
+            if not revisions:
+                return None
+                
+            text = revisions[0].get("*", "") # MediaWiki API 的內容欄位通常是 '*'
+            fields = extract_wiktionary_fields(text)
+            
+            return {
+                "word": word,
+                **fields
+            }
+    except Exception as e:
+        print(f"Wiktionary API error for '{word}': {e}")
+        return None
+    
+    return None
 # 從 dump 擷取片語清單
 def extract_phrases_from_dump(dump_path: Path, out_path: Path, limit: int = 100000) -> None:
     if not dump_path.exists():  # dump 檔不存在就返回

@@ -206,3 +206,29 @@ def parse_examples(data: dict | None) -> list[dict]:
                 zh = translateText(ex)  # 呼叫翻譯函式取得繁體中文翻譯
                 examples.append({"en": ex, "zh": zh})  # 加入回傳清單
     return examples  # 回傳例句清單
+
+# 額外 API: 抓取相關片語 (備援方案)
+def fetch_phrases_from_api(word: str) -> list[dict]:
+    """
+    使用 Datamuse API 找出與單字相關的常用詞組或聯想詞。
+    """
+    url = "https://api.datamuse.com/words"
+    # rel_trg: 觸發詞 (關聯性最強的詞組基礎)
+    params = {"rel_trg": word, "max": 10}
+    
+    phrases = []
+    try:
+        r = requests.get(url, params=params, timeout=5)
+        if r.status_code == 200:
+            data = r.json()
+            for item in data:
+                phrase_text = f"{word} {item['word']}" if item.get('score', 0) > 1000 else item['word']
+                # 簡單判斷：如果是單個詞，就嘗試組成常見搭配
+                phrases.append({
+                    "text": item['word'], 
+                    "zh": "", # 翻譯留空或後續補上
+                    "examples": []
+                })
+    except Exception:
+        pass
+    return phrases
