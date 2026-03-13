@@ -78,71 +78,169 @@
     "frequency": 2341
   },
   {
-    "id": 2,
-    "word": "blood",
+    "id": 12371,
+    "word": "explosive",
     "phonetics": [
       {
-        "region": "us",
-        "text": "blʌd",
+        "region": "uk",
+        "text": "ɪkˈspləʊsɪv",
         "audio": ""
       },
       {
-        "region": "uk",
-        "text": "blʌd",
+        "region": "us",
+        "text": "ɪkˈsploʊsɪv",
         "audio": ""
       }
     ],
     "meanings": [
       {
-        "pos": "n.",
-        "definition": "the red liquid that circulates in the arteries and veins",
+        "pos": "adj.",
+        "definition": "易爆的，可能引起爆炸的；（局勢）一觸即發的，爆炸性的；暴躁的，易怒的；激增的；強有力的；（聲音）轟響的；（濁音）爆發的，破裂的",
         "synonyms": [
-          "lifeblood"
+          "volatile",
+          "fulminic",
+          "blasting agent",
+          "detonator"
         ],
         "examples": [
           {
-            "en": "Blood carries oxygen throughout the body.",
-            "zh": "血液將氧氣輸送到全身。"
+            "en": "The car had been rigged with about 300 lbs of explosive.",
+            "zh": "有人暗中在車上放了大約300磅炸藥。"
+          },
+          {
+            "en": "The explosive device was timed to go off at the rush hour.",
+            "zh": "該爆炸裝置定在交通高峯時間爆炸。"
+          },
+          {
+            "en": "For the rest of the day, he worked on the assembly of an explosive device.",
+            "zh": "在那天餘下的時間裏，他在進行一個爆炸裝置的組裝。"
+          }
+        ]
+      },
+      {
+        "pos": "n.",
+        "definition": "炸藥，爆炸物",
+        "synonyms": [
+          "volatile",
+          "fulminic",
+          "blasting agent",
+          "detonator"
+        ],
+        "examples": [
+          {
+            "en": "The car had been rigged with about 300 lbs of explosive.",
+            "zh": "有人暗中在車上放了大約300磅炸藥。"
+          },
+          {
+            "en": "The explosive device was timed to go off at the rush hour.",
+            "zh": "該爆炸裝置定在交通高峯時間爆炸。"
+          },
+          {
+            "en": "For the rest of the day, he worked on the assembly of an explosive device.",
+            "zh": "在那天餘下的時間裏，他在進行一個爆炸裝置的組裝。"
           }
         ]
       }
     ],
     "phrases": [
       {
-        "text": "blood pressure",
-        "zh": "血壓",
-        "examples": [
-          {
-            "en": "Her blood pressure is normal.",
-            "zh": "她的血壓正常。"
-          }
-        ]
+        "text": "explosive welding",
+        "zh": "爆炸焊接；爆炸成形",
+        "examples": []
       },
       {
-        "text": "blood donor",
-        "zh": "捐血者",
+        "text": "emulsion explosive",
+        "zh": "乳膠炸藥",
+        "examples": []
+      },
+      {
+        "text": "explosive gas",
+        "zh": "易爆氣，爆炸氣；爆炸性氣體",
         "examples": []
       }
     ],
     "derivatives": [
       {
-        "word": "bloodless"
+        "word": "exploded",
+        "meanings": [
+          {
+            "pos": "adj.",
+            "definition": "爆炸了的；分解的；被破除的"
+          }
+        ]
       },
       {
-        "word": "bloodstream"
+        "word": "explosively",
+        "meanings": [
+          {
+            "pos": "adv.",
+            "definition": "爆發地，引起爆炸地"
+          }
+        ]
+      },
+      {
+        "word": "explosion",
+        "meanings": [
+          {
+            "pos": "n.",
+            "definition": "爆炸；爆發；激增"
+          }
+        ]
+      },
+      {
+        "word": "exploding",
+        "meanings": [
+          {
+            "pos": "n.",
+            "definition": "爆炸，爆發；水熱炸裂"
+          }
+        ]
+      },
+      {
+        "word": "exploded",
+        "meanings": [
+          {
+            "pos": "v.",
+            "definition": "爆炸（explode的過去分詞）"
+          }
+        ]
+      },
+      {
+        "word": "exploding",
+        "meanings": [
+          {
+            "pos": "v.",
+            "definition": "爆炸（explode的ing形式）"
+          }
+        ]
+      },
+      {
+        "word": "explode",
+        "meanings": [
+          {
+            "pos": "vi.",
+            "definition": "爆炸，爆發；激增"
+          }
+        ]
+      },
+      {
+        "word": "explode",
+        "meanings": [
+          {
+            "pos": "vt.",
+            "definition": "使爆炸；爆炸；推翻"
+          }
+        ]
       }
     ],
     "etymology": [
       {
-        "source": "Old English",
-        "description": "from Old English *blōd*"
+        "source": "franchise:選舉權，特許經銷權",
+        "description": "來自古法語franc, 非奴役的，自由的，來自拉丁語francus, 法蘭克人，自由人，詞源同Frank. 其原詞義即使享有自由權，後引申詞義選舉權，特許經銷權等。"
       }
     ],
-    "categories": [
-      "biology",
-      "medicine"
-    ],
-    "level": "A1",
-    "frequency": 512
+    "categories": [],
+    "level": "",
+    "frequency": null
   }
 ]

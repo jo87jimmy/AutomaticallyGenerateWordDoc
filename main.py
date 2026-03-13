@@ -1,4 +1,5 @@
 import json  # 匯入 JSON 模組
+from concurrent.futures import ThreadPoolExecutor, as_completed  # 匯入多線程執行器
 from pathlib import Path  # 匯入 Path 以處理路徑
 from tqdm import tqdm  # 匯入 tqdm 顯示進度條
 from builder.cefr_provider import get_level_from_rank, load_cefr  # 匯入 CEFR 相關函式
@@ -56,11 +57,24 @@ def main():  # 主流程
         cache_wiktionary_dir=CACHE_WIKTIONARY_DIR,
     )
 
-    for batch in iter_word_batches(DOC_DIR, batch_size=10000):  # 逐批處理單字
-        # 直接在主行程中循序處理，方便除錯與追蹤
-        for word in tqdm(batch, desc="Building entries"):
-            item = builder.build(word)  # 呼叫建構器自動建立條目（ID 會自動增加）
-            dataset.append(item)  # 加入資料集
+    for batch in iter_word_batches(DOC_DIR, batch_size=5000):  # 逐批處理單字，縮短單一批次大小以利於觀察進度
+        # 使用 ThreadPoolExecutor 進行多線程處理，顯著提升 I/O 密集型任務 (API 請求) 的速度
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            # 建立 Future 物件映射，維持 word 與任務的關聯
+            futures = {executor.submit(builder.build, word): word for word in batch}
+            
+            # 使用 tqdm 與 as_completed 追蹤任務進度
+            for future in tqdm(as_completed(futures), total=len(futures), desc="Building entries"):
+                try:
+                    item = future.result()  # 取得建構結果
+                    if item:
+                        dataset.append(item)  # 加入資料集
+                except Exception as e:
+                    # 捕捉單個單字處理時的錯誤，避免整個批次中斷
+                    print(f"\n[錯誤] 處理單字時發生異常: {e}")
+
+    # 確保最終輸出資料集依照 ID 排序，維持結果的一致性
+    dataset.sort(key=lambda x: x["id"])
 
     out_path = OUTPUT_DIR / "dictionary.json"  # 設定輸出檔案路徑
     out_path.write_text(
