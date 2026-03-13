@@ -9,7 +9,7 @@ from builder.dictionary_api_provider import (  # 匯入 Dictionary API 相關函
 from builder.translate_provider import translate_to_zh  # 匯入英文翻譯成中文的函式
 from builder.wordnet_provider import get_wordnet_meanings  # 匯入 WordNet 詞義擷取函式
 from builder.wiktionary_provider import load_wiktionary_entry  # 匯入 Wiktionary 資料讀取函式
-from builder.translate_provider import translateText  # 匯入英文翻譯成中文的函式
+from builder import dictionary_api_provider
 
 def build_entry(  # 建立單字完整條目
     idx: int,  # 單字索引
@@ -47,7 +47,7 @@ def build_entry(  # 建立單字完整條目
         for e_idx, ex in enumerate(meaning.get("examples", []), 1):  # 逐一處理該詞義下的例句
             ex["id"] = e_idx  # 設定例句的流水號
             if not ex.get("zh"):  # 若該例句尚未翻譯
-                ex["zh"] = translateText(ex.get("en", ""))  # 執行自動翻譯
+                ex["zh"] = dictionary_api_provider.translateText(ex.get("en", ""))  # 執行自動翻譯
                 # ex["zh"] = translate_to_zh(ex.get("en", ""), cache_zh_dir)  # 備用的翻譯方式
 
     wkt = load_wiktionary_entry(word, cache_wiktionary_dir) or {}  # 讀取 Wiktionary 資料

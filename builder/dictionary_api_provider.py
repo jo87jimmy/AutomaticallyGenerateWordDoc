@@ -80,7 +80,7 @@ def _detect_region(p: dict) -> str:
         return "us"  # 回傳 us
     if "-uk" in audio or "_uk" in audio or "/uk" in audio:  # 依音檔字串判斷英式
         return "uk"  # 回傳 uk
-    return ""  # 其他情況回傳空字串
+    return "uk"  # 其他情況回傳空字串
 
 # 解析詞義與例句
 def parse_meanings(data: dict | None) -> list[dict]:

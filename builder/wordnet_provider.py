@@ -1,4 +1,4 @@
-﻿import  dictionary_api_provider
+﻿from builder import dictionary_api_provider
 
 try:  # 嘗試載入 NLTK WordNet
     from nltk.corpus import wordnet as wn  # 匯入 WordNet 資料庫
