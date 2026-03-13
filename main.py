@@ -57,21 +57,42 @@ def main():  # 主流程
         cache_wiktionary_dir=CACHE_WIKTIONARY_DIR,
     )
 
-    for batch in iter_word_batches(DOC_DIR, batch_size=5000):  # 逐批處理單字，縮短單一批次大小以利於觀察進度
-        # 使用 ThreadPoolExecutor 進行多線程處理，顯著提升 I/O 密集型任務 (API 請求) 的速度
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            # 建立 Future 物件映射，維持 word 與任務的關聯
-            futures = {executor.submit(builder.build, word): word for word in batch}
-            
-            # 使用 tqdm 與 as_completed 追蹤任務進度
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Building entries"):
+    # --- 調試設定 ---
+    # 是否開啟多線程處理（True: 效能優先，False: 方便 Debug 追蹤錯誤與單步執行）
+    USE_MULTITHREADING = False
+    # ----------------
+
+    for batch in iter_word_batches(
+        DOC_DIR, batch_size=5000
+    ):  # 逐批處理單字，縮短單一批次大小以利於觀察進度
+        if USE_MULTITHREADING:
+            # 使用 ThreadPoolExecutor 進行多線程處理，顯著提升 I/O 密集型任務 (API 請求) 的速度
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                # 建立 Future 物件映射，維持 word 與任務的關聯
+                futures = {executor.submit(builder.build, word): word for word in batch}
+
+                # 使用 tqdm 與 as_completed 追蹤任務進度
+                for future in tqdm(
+                    as_completed(futures),
+                    total=len(futures),
+                    desc="Building entries (Multithreaded)",
+                ):
+                    try:
+                        item = future.result()  # 取得建構結果
+                        if item:
+                            dataset.append(item)  # 加入資料集
+                    except Exception as e:
+                        # 捕捉單個單字處理時的錯誤，避免整個批次中斷
+                        print(f"\n[錯誤] 處理單字時發生異常: {e}")
+        else:
+            # 單線程模式：適合 Debug，可以精確看到是哪個單字出錯且易於設置斷點
+            for word in tqdm(batch, desc="Building entries (Single-threaded)"):
                 try:
-                    item = future.result()  # 取得建構結果
+                    item = builder.build(word)  # 直接依序執行
                     if item:
-                        dataset.append(item)  # 加入資料集
+                        dataset.append(item)
                 except Exception as e:
-                    # 捕捉單個單字處理時的錯誤，避免整個批次中斷
-                    print(f"\n[錯誤] 處理單字時發生異常: {e}")
+                    print(f"\n[錯誤] 處理單字 '{word}' 時發生異常: {e}")
 
     # 確保最終輸出資料集依照 ID 排序，維持結果的一致性
     dataset.sort(key=lambda x: x["id"])
