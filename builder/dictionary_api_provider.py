@@ -36,16 +36,30 @@ def parse_phonetics(data: dict | None) -> list[dict]:
     results = []  # 建立回傳清單
     if not data:  # 若資料為空
         return results  # 回傳空清單
+    
+    seen_texts = set()  # 用於紀錄已出現過的音標文字，避免重複
+    
     for p in data.get("phonetics", []):  # 逐筆處理 phonetics
-        if len(results) >= 2:  # 若已滿兩筆則跳出
-            break
         text = p.get("text", "")  # 取出音標文字
-        if text:  # 有音標文字才加入
-            results.append({  # 新增一筆音標資料
-                "region": _detect_region(p),  # 偵測發音區域
-                "text": text,  # 音標文字
-                "audio": p.get("audio", ""),  # 音檔連結
-            })  # 結束新增項目
+        if not text:
+            continue
+            
+        # 如果音標相同，則跳到下一筆
+        if text in seen_texts:
+            continue
+            
+        # 若已滿兩筆，且當前是不同的音標時則跳出
+        # (能走到這裡代表是不同的音標文字)
+        if len(results) >= 2:
+            break
+            
+        results.append({  # 新增一筆音標資料
+            "region": _detect_region(p),  # 偵測發音區域
+            "text": text,  # 音標文字
+            "audio": p.get("audio", ""),  # 音檔連結
+        })
+        seen_texts.add(text)  # 紀錄已處理過的文字
+        
     return results  # 回傳音標清單
 # 英文詞性對照表
 _POS_MAP = {  
@@ -65,10 +79,29 @@ _POS_MAP = {
 }  # 結束詞性對照表
 
 # 將詞性映射為縮寫
-def _map_pos(pos: str) -> str:
+def map_pos(pos: str) -> str:
     if not pos:  # 詞性為空
         return ""  # 回傳空字串
     return _POS_MAP.get(pos.lower(), pos)  # 轉小寫後查表，找不到就原樣回傳
+
+# 清理並正規化 API 資料
+def clean_api_data(data: dict | None) -> dict | None:
+    if not data:
+        return data
+    
+    # 移除多餘欄位，節省記憶體與減少雜訊
+    data.pop("sourceUrls", None)
+    data.pop("license", None)
+    
+    # 正規化 meanings 中的欄位
+    if "meanings" in data:
+        for m in data["meanings"]:
+            if "partOfSpeech" in m:
+                # 取得原詞性，映射後存入 pos 欄位，並移除原 partOfSpeech
+                m["pos"] = map_pos(m.get("partOfSpeech", ""))
+                m.pop("partOfSpeech", None)
+                
+    return data
 
 # 依音檔或欄位推測發音區域
 def _detect_region(p: dict) -> str:
@@ -88,23 +121,47 @@ def parse_meanings(data: dict | None) -> list[dict]:
     if not data:  # 若資料為空
         return meanings  # 回傳空清單
     
-    example_count = 0  # 紀錄累計處理的例句數量
+    seen_pos = set()  # 用於紀錄已處理過的詞性，確保每個詞性只出現一次
+    
     for m in data.get("meanings", []):  # 逐筆處理 meanings
-        pos = _map_pos(m.get("partOfSpeech", ""))  # 取得並映射詞性
-        for d in m.get("definitions", []):  # 逐筆處理 definitions
-            ex = d.get("example")  # 取得例句
-            zh = ""
-            # 若有例句且達到三個的上限，則跳出
-            if ex and example_count >= 3:
-               break 
-            zh = translateText(ex)
-            meanings.append({  # 新增一筆詞義
-                "pos": pos,  # 詞性
-                "definition": d.get("definition", ""),  # 英文定義
-                "synonyms": d.get("synonyms", []) or [],  # 同義詞清單
-                "examples": [{"en": ex, "zh": zh}] if ex else [],  # 例句（含中譯）
-            })  # 結束新增
-            example_count += 1
+        # 取得並映射詞性，優先嘗試已正規化的 pos 欄位
+        p_val = m.get("pos") or m.get("partOfSpeech", "")
+        pos = map_pos(p_val)
+        
+        # 若詞性已處理過或為空，則跳過 (同一個 pos 只取一個區塊)
+        if not pos or pos in seen_pos:
+            continue
+            
+        definitions = m.get("definitions", [])
+        if not definitions:
+            continue
+            
+        # 取該詞性的第一筆定義作為主要解釋
+        first_def = definitions[0]
+        
+        # 收集同義詞：優先取 meaning 層級的，若無則取第一筆定義中的
+        synonyms = m.get("synonyms", []) or []
+        if not synonyms:
+            synonyms = first_def.get("synonyms", []) or []
+            
+        # 尋找該詞性下的第一個可用例句
+        examples = []
+        for d in definitions:
+            ex = d.get("example")
+            if ex:
+                zh = translateText(ex)  # 進行翻譯
+                examples = [{"en": ex, "zh": zh}]  # 包裝成規定的物件格式
+                break  # 同一個 pos 只取一個例句，找到即停止
+                
+        meanings.append({
+            "pos": pos,  # 詞性 (如 n., v.)
+            "definition": first_def.get("definition", ""),  # 英文定義
+            "synonyms": synonyms,  # 同義詞清單
+            "examples": examples,  # 例句清單 (最多一筆)
+        })
+        
+        seen_pos.add(pos)  # 標記此詞性已處理
+        
     return meanings  # 回傳詞義清單
 
 # 線上翻譯文字 (使用 Google Translate 免費 API)

@@ -1,6 +1,13 @@
-﻿from builder import dictionary_api_provider
+from builder import dictionary_api_provider
 
 try:  # 嘗試載入 NLTK WordNet
+    import nltk
+    # 確保 WordNet 資源已下載，避免 LookupError
+    try:
+        nltk.download('wordnet', quiet=True)
+        nltk.download('omw-1.4', quiet=True)
+    except Exception:
+        pass
     from nltk.corpus import wordnet as wn  # 匯入 WordNet 資料庫
 except Exception:  # nltk not installed  # NLTK 未安裝時
     wn = None  # 設定為 None 代表不可用
