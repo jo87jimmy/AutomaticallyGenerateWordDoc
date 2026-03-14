@@ -139,49 +139,29 @@ def parse_meanings(data: dict | None) -> list[dict]:
     if not data:  # 若資料為空
         return meanings  # 回傳空清單
 
-    seen_pos = set()  # 用於紀錄已處理過的詞性，確保每個詞性只出現一次
-
+    example_count = 0  # 紀錄累計處理的例句數量
     for m in data.get("meanings", []):  # 逐筆處理 meanings
-        # 取得並映射詞性，優先嘗試已正規化的 pos 欄位
+        # pos = map_pos(m.get("partOfSpeech", ""))  # 取得並映射詞性
         p_val = m.get("pos") or m.get("partOfSpeech", "")
         pos = map_pos(p_val)
-
-        # 若詞性已處理過或為空，則跳過 (同一個 pos 只取一個區塊)
-        if not pos or pos in seen_pos:
-            continue
-
-        definitions = m.get("definitions", [])
-        if not definitions:
-            continue
-
-        # 取該詞性的第一筆定義作為主要解釋
-        first_def = definitions[0]
-
-        # 收集同義詞：優先取 meaning 層級的，若無則取第一筆定義中的
-        synonyms = m.get("synonyms", []) or []
-        if not synonyms:
-            synonyms = first_def.get("synonyms", []) or []
-
-        # 尋找該詞性下的第一個可用例句
-        examples = []
-        for d in definitions:
-            ex = d.get("example")
-            if ex:
-                zh = translateText(ex)  # 進行翻譯
-                examples = [{"en": ex, "zh": zh}]  # 包裝成規定的物件格式
-                break  # 同一個 pos 只取一個例句，找到即停止
-
-        meanings.append(
-            {
-                "pos": pos,  # 詞性 (如 n., v.)
-                "definition": first_def.get("definition", ""),  # 英文定義
-                "synonyms": synonyms,  # 同義詞清單
-                "examples": examples,  # 例句清單 (最多一筆)
-            }
-        )
-
-        seen_pos.add(pos)  # 標記此詞性已處理
-
+        for d in m.get("definitions", []):  # 逐筆處理 definitions
+            ex = d.get("example")  # 取得例句
+            zh = ""
+            # 若有例句且達到五個的上限，則跳出
+            if ex and example_count >= 5:
+                break
+            zh = translateText(ex)
+            meanings.append(
+                {  # 新增一筆詞義
+                    "pos": pos,  # 詞性
+                    "definition": d.get("definition", "")
+                    + "; "
+                    + translateText(d.get("definition", "")),  # 英文定義與中文翻譯
+                    "synonyms": d.get("synonyms", []) or [],  # 同義詞清單
+                    "examples": [{"en": ex, "zh": zh}] if ex else [],  # 例句（含中譯）
+                }
+            )  # 結束新增
+            example_count += 1
     return meanings  # 回傳詞義清單
 
 
@@ -359,13 +339,18 @@ def fetch_google_extras(word: str) -> dict:
                             phrases.append({"text": s, "zh": zh, "examples": []})
                         elif (
                             word.lower() in s.lower() and s.lower() != word.lower()
-                        ) or len(s) > len(word) + 2:  # 包含根詞或長度顯著增加，視為衍生詞
+                        ) or len(s) > len(
+                            word
+                        ) + 2:  # 包含根詞或長度顯著增加，視為衍生詞
                             derivatives_zh = translateText(s)
                             derivatives.append(
                                 {
                                     "word": s,
                                     "meanings": [
-                                        {"pos": current_pos, "definition": derivatives_zh}
+                                        {
+                                            "pos": current_pos,
+                                            "definition": derivatives_zh,
+                                        }
                                     ],
                                 }
                             )
