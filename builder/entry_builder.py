@@ -67,13 +67,8 @@ class WordEntryBuilder:
         phonetics = parse_phonetics(api_data)
         examples = parse_examples(api_data)
 
-        # 優先從 Google Translate 取得詞義 (因其分類與中文翻譯較符合直覺)
-        # 依據使用者需求：先跑 meanings = https://translate.googleapis.com/translate_a 後才跑 meanings = parse_meanings(api_data)
-        meanings = fetch_google_dictionary_meanings(word)
-
-        # 2. 備援來源 (原 Dictionary API)
-        if not meanings:
-            meanings = parse_meanings(api_data)
+        # 透過 Dictionary API
+        meanings = parse_meanings(api_data)
 
         # 3. 備援來源 (WordNet)
         if not meanings:
@@ -90,13 +85,6 @@ class WordEntryBuilder:
                     }
                 )
 
-        # 3. 為例句加上中文翻譯
-        for meaning in meanings:
-            for ex in meaning.get("examples", []):
-                if not ex.get("zh"):
-                    ex["zh"] = translateText(ex.get("en", ""))
-        # 3. 補充額外資訊 (Google Translate 優先提取)
-        # 由於 Google 沒提供 Etymology，這部分仍需依賴 Wiktionary
         google_extras = fetch_google_extras(word)
         phrases = google_extras["phrases"]
         derivatives = google_extras["derivatives"]
