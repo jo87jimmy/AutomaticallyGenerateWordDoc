@@ -70,20 +70,20 @@ class WordEntryBuilder:
         # 透過 Dictionary API
         meanings = parse_meanings(api_data)
 
-        # 3. 備援來源 (WordNet)
-        if not meanings:
-            wordnet_data = get_wordnet_meanings(word)
-            for m in wordnet_data:
-                meanings.append(
-                    {
-                        "pos": m["pos"],
-                        "definition": m["definition"],
-                        "synonyms": m["synonyms"],
-                        "examples": (
-                            examples[:1] if examples else []
-                        ),  # 只有在有例句時才加入，避免空值錯誤
-                    }
-                )
+        # # 3. 備援來源 (WordNet)
+        # if not meanings:
+        #     wordnet_data = get_wordnet_meanings(word)
+        #     for m in wordnet_data:
+        #         meanings.append(
+        #             {
+        #                 "pos": m["pos"],
+        #                 "definition": m["definition"],
+        #                 "synonyms": m["synonyms"],
+        #                 "examples": (
+        #                     examples[:1] if examples else []
+        #                 ),  # 只有在有例句時才加入，避免空值錯誤
+        #             }
+        #         )
 
         google_extras = fetch_google_extras(word)
         phrases = google_extras["phrases"]
