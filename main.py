@@ -58,8 +58,8 @@ def main():  # 主流程
     )
 
     # --- 調試設定 ---
-    # 是否開啟多線程處理（True: 效能優先，False: 方便 Debug 追蹤錯誤與單步執行）
-    USE_MULTITHREADING = True
+    # 是否開啟多線程處理（ True : 效能優先， False: 方便 Debug 追蹤錯誤與單步執行）
+    USE_MULTITHREADING = False
     # ----------------
 
     for batch in iter_word_batches(

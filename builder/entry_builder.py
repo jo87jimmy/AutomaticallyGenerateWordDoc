@@ -70,21 +70,6 @@ class WordEntryBuilder:
         # 透過 Dictionary API
         meanings = parse_meanings(api_data)
 
-        # # 3. 備援來源 (WordNet)
-        # if not meanings:
-        #     wordnet_data = get_wordnet_meanings(word)
-        #     for m in wordnet_data:
-        #         meanings.append(
-        #             {
-        #                 "pos": m["pos"],
-        #                 "definition": m["definition"],
-        #                 "synonyms": m["synonyms"],
-        #                 "examples": (
-        #                     examples[:1] if examples else []
-        #                 ),  # 只有在有例句時才加入，避免空值錯誤
-        #             }
-        #         )
-
         google_extras = fetch_google_extras(word)
         phrases = google_extras["phrases"]
         derivatives = google_extras["derivatives"]
@@ -98,8 +83,16 @@ class WordEntryBuilder:
         if not derivatives:
             derivatives = wkt.get("derivatives", [])
 
-        # 辭源 (Google 無法提供，直接用 Wiktionary)
-        etymology = wkt.get("etymology", [])
+        # 整理辭源：從 Wiktionary 擷取描述，整理為「英文; 中文」格式
+        # 我們遍歷 Wiktionary 的辭源清單，將每條描述翻譯後進行合併
+        raw_etymology = wkt.get("etymology", [])
+        etymology = []
+        for item in raw_etymology:
+            eng = item.get("description", "").strip()
+            if eng:
+                zh = translateText(eng)
+                # 依據需求格式：英文 + "; " + 中文
+                etymology.append(f"{eng}; {zh}" if zh else eng)
 
         # 5. 計算字頻與等級
         frequency = self.freq_map.get(word)

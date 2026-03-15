@@ -40,7 +40,8 @@ def fetch_frequency_from_api(word: str) -> int | None:
                         if f_score > 10: return 2000  # A2
                         if f_score > 1:  return 5000  # B1
                         if f_score > 0.1: return 9000 # B2
-                        return 15000 # C1
+                        if f_score > 0.01: return 15000 # C1
+                        return 25000 # C2 (極低頻)
         return None
     except Exception:
         return None
