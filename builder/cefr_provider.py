@@ -1,4 +1,4 @@
-﻿import csv  # 匯入 CSV 解析模組，用來讀取 CEFR 資料
+import csv  # 匯入 CSV 解析模組，用來讀取 CEFR 資料
 from pathlib import Path  # 匯入 Path 以處理檔案路徑
 
 # 讀取 CEFR 對照表並回傳字典
@@ -15,16 +15,18 @@ def load_cefr(path: Path) -> dict[str, str]:
                 mapping[w.lower()] = level.strip().upper()  # 將單字小寫化，等級去空白並大寫
     return mapping  # 回傳完成的 CEFR 對照字典
 
-# 依頻率名次推估 CEFR 等級
+# 依頻率名次推估 CEFR 等級 (A1-C2)
 def get_level_from_rank(rank: int | None) -> str:  
-    if not rank:  # 名次為 None 或 0 時，視為未知
-        return ""  # 回傳空字串表示沒有等級
-    if rank < 1000:  # 前 1000 名屬於最基礎
+    if not rank:  # 名次為 None 或 0 時，視為極低頻或未知
+        return "C2"  # 回傳 C2 作為預設等級
+    if rank < 1000:  # 前 1000 名
         return "A1"  # 回傳 A1
-    if rank < 3000:  # 1000~2999 名屬於入門
+    if rank < 3000:  # 1000~2999 名
         return "A2"  # 回傳 A2
-    if rank < 6000:  # 3000~5999 名屬於中級
+    if rank < 6000:  # 3000~5999 名
         return "B1"  # 回傳 B1
-    if rank < 10000:  # 6000~9999 名屬於中高級
+    if rank < 10000:  # 6000~9999 名
         return "B2"  # 回傳 B2
-    return "C1"  # 其他較低頻詞彙視為 C1
+    if rank < 20000:  # 10000~19999 名
+        return "C1"  # 回傳 C1
+    return "C2"  # 20000 名以後視為 C2
